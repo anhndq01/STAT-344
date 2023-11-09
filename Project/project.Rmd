@@ -50,6 +50,7 @@ sample.strt <- dat[strt$ID_unit,]
 
 ```{r}
 #Taking an SRS of size n=1000 from the population
+set.seed(344)
 SRS.index <- sample.int(N, n, replace = FALSE)
 SRS <- dat[SRS.index,]
 ```
