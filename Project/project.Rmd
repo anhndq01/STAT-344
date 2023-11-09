@@ -1,0 +1,117 @@
+---
+title: 'STAT 344 Project'
+output: pdf_document
+---
+```{r}
+library(tidyverse)
+dat <- read.csv('crimedata_csv_AllNeighbourhoods_2022.csv')
+summary(dat)
+```
+
+
+```{r}
+#Convert categorical attributes into factor
+dat[c('TYPE','HUNDRED_BLOCK','NEIGHBOURHOOD')] <- lapply(dat[c('TYPE','HUNDRED_BLOCK','NEIGHBOURHOOD')],as.factor)
+dat <- dat[dat$NEIGHBOURHOOD!="",]
+( unique(dat$TYPE) )
+( as.vector(unique(dat$NEIGHBOURHOOD)))
+summary(dat$TYPE)
+```
+
+```{r}
+library(dplyr)
+library(data.table)
+pop <- read.csv('CensusLocalAreaProfiles2016.csv')
+pop <- head(pop,5)
+pop <- pop %>% select(-1,-2)
+pop <- pop[4:5,]
+pop <- transpose(pop)
+colnames(pop) <- c('neighborhood','population')
+pop[pop$neighborhood=="Arbutus-Ridge "]
+pop
+#Combine datasets
+
+```
+Population and taking sample
+```{r}
+N <- nrow(dat) #Population size
+n <- 1000 # Sample size
+set.seed(344)
+library(sampling)
+#Stratified sample by neighborhood
+dat <- dat[order(dat$NEIGHBOURHOOD),]
+dat <- dat[-(1:5),] #Drop first 5 rows where the neighborhood name is blank space
+freq <- table(dat$NEIGHBOURHOOD)/nrow(dat)
+freq <- as.vector(freq[-1])
+n.h <- round(freq*n) #Each stratum sample size
+strt <- strata(dat, stratanames = 'NEIGHBOURHOOD', size=n.h, method = 'srswr')
+sample.strt <- dat[strt$ID_unit,]
+```
+
+```{r}
+#Taking an SRS of size n=1000 from the population
+SRS.index <- sample.int(N, n, replace = FALSE)
+SRS <- dat[SRS.index,]
+```
+Now, we will estimate the proportion of crimes that happen during the summer months (July-August) using two samples above. We first use the SRS estimate and report both the estimated value as well as the standard error.
+```{r}
+summer <- SRS[SRS$MONTH %in% c(7,8),]
+#Estimated proportion
+p.hat.SRS <- nrow(summer)/n
+#Standard error of the estimator, including FPC
+se.SRS <- sqrt((1-n/N)*p.hat.SRS*(1-p.hat.SRS)/n)
+( summer.SRS.results <- c(p.hat.SRS, se.SRS) )
+```
+Next, we will find the stratification estimator:
+```{r}
+sample.strt$summer <- ifelse(sample.strt$MONTH %in% c(7,8),1,0) #Create dummy for if the month is in summer
+N.h <- dat %>% group_by(NEIGHBOURHOOD) %>% count() #population size for the strata
+
+p.hat.h <- sample.strt %>%  #proportion for each strata
+  group_by(NEIGHBOURHOOD) %>% 
+  summarise(p.hat.h = mean(summer))
+p.hat.str <- sum(N.h$n/N*p.hat.h$p.hat.h) #Estimated value
+#Standard error
+se.h <- sqrt((1 - n.h / N.h$n) * p.hat.h$p.hat.h*(1-p.hat.h$p.hat.h) / n.h)
+se.str <- sqrt(sum((N.h$n / N)^2 * se.h^2))
+( summer.str.results <- c(p.hat.str,se.str) )
+```
+
+We will now move on to the second parameter of interest, which is the proportion of Theft of Bicycle out of all crimes in 2022. We will use the same SRS and stratified sample as given above.
+
+```{r}
+#Estimator from SRS
+bike_theft <- SRS[SRS$TYPE=='Theft of Bicycle',]
+p.hat.SRS_bike <- nrow(bike_theft)/n
+#Standard error of the estimator, including FPC
+se.SRS_bike <- sqrt((1-n/N)*p.hat.SRS_bike*(1-p.hat.SRS_bike)/n)
+( bike_theft.SRS.results <- c(p.hat.SRS_bike, se.SRS_bike) )
+```
+```{r}
+#Estimator from stratified sample
+sample.strt$bike_theft <- ifelse(sample.strt$TYPE=='Theft of Bicycle',1,0) #Create dummy for if the crime type is bike theft
+p.hat.h_bike <- sample.strt %>%  #proportion for each strata
+  group_by(NEIGHBOURHOOD) %>% 
+  summarise(p.hat.h = mean(bike_theft))
+p.hat.str_bike <- sum(N.h$n/N*p.hat.h_bike$p.hat.h) #Estimated value
+#Standard error
+se.h_bike <- sqrt((1 - n.h / N.h$n) * p.hat.h_bike$p.hat.h*(1-p.hat.h_bike$p.hat.h) / n.h)
+se.str_bike <- sqrt(sum((N.h$n / N)^2 * se.h_bike^2))
+( bike_theft.str.results <- c(p.hat.str_bike,se.str_bike) )
+```
+
+
+
+
+
+
+Proportion of crimes that happened during the summer (July-August)
+Proportion of a type of crime out of all crime (Theft of Bicycle)
+#Focus on 2 main params and look at population later if needed
+SRS and stratification (proportional allocation)
+Use FPC
+
+
+
+
+
