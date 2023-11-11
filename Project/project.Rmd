@@ -41,7 +41,7 @@ set.seed(344)
 SRS.index <- sample.int(N, n, replace = FALSE)
 SRS <- dat[SRS.index,]
 ```
-Now, we will estimate the proportion of crimes that happen during the summer months (July-August) using two samples above. We first use the SRS estimate and report both the estimated value as well as the standard error.
+Now, we will estimate the total number of crimes that happen during the summer months (July-August) using two samples above. We first use the SRS estimate and report both the estimated value as well as the standard error.
 ```{r}
 SRS$u <- ifelse(SRS$MONTH %in% c(7,8),1,0) #Create dummy for if the month is in summer
 tot.hat.SRS <- N*mean(SRS$u)
@@ -87,13 +87,6 @@ se.h_bike <- sqrt((1 - n.h / N.h$n) * p.hat.h_bike$p.hat.h*(1-p.hat.h_bike$p.hat
 se.str_bike <- sqrt(sum((N.h$n / N)^2 * se.h_bike^2))
 ( bike_theft.str.results <- c(p.hat.str_bike,se.str_bike) )
 ```
-
-Proportion of crimes that happened during the summer (July-August)
-Proportion of a type of crime out of all crime (Theft of Bicycle)
-#Focus on 2 main params and look at population later if needed
-SRS and stratification (proportional allocation)
-Use FPC
-
 
 
 
