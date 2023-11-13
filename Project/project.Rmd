@@ -32,6 +32,20 @@ freq <- table(dat$NEIGHBOURHOOD)/nrow(dat)
 freq <- as.vector(freq[-1])
 n.h <- round(freq*n) #Each stratum sample size
 strt <- strata(dat, stratanames = 'NEIGHBOURHOOD', size=n.h, method = 'srswr')
+
+#Grouping of neighborhoods into larger areas
+D1 <- c('West End', 'Yaletown', 'Coal Harbour','Central Business District','Stanley Park')
+D2 <- c('Strathcona', 'Grandview-Woodland', 'Hastings-Sunrise','Downtown Eastside')
+D3 <- c('Sunset', 'Renfrew-Collingwood', 'Mount Pleasant', 'Killarney', 'Victoria-Fraserview', 'Kensington-Cedar Cottage')
+D4 <- c('West Point Grey', 'Kitsilano', 'Fairview', 'Dunbar-Southlands', 'Arbutus Ridge', 'Shaughnessy', 'South Cambie', 'Riley Park', 'Musqueam', 'Kerrisdale', 'Oakridge', 'Marpole')
+dat$DISTRICT[dat$NEIGHBOURHOOD %in% D1] = 'D1'
+dat$DISTRICT[dat$NEIGHBOURHOOD %in% D2] = 'D2'
+dat$DISTRICT[dat$NEIGHBOURHOOD %in% D3] = 'D3'
+dat$DISTRICT[dat$NEIGHBOURHOOD %in% D4] = 'D4'
+#freq <- table(dat$DISTRICT)/nrow(dat)
+#freq <- as.vector(freq)
+#n.h <- round(freq*n)
+#strt <-  strata(dat, stratanames = 'DISTRICT', size=n.h, method = 'srswr')
 sample.strt <- dat[strt$ID_unit,]
 ```
 
@@ -48,6 +62,8 @@ tot.hat.SRS <- N*mean(SRS$u)
 #Standard error of the estimator, including FPC
 se.SRS <- N*sqrt(var(SRS$u)/n)
 ( summer.SRS.results <- c(tot.hat.SRS, se.SRS) )
+#95% CI
+(ci.summer.SRS <- c(tot.hat.SRS-1.96*se.SRS,tot.hat.SRS+1.96*se.SRS))
 ```
 Next, we will find the stratification estimator:
 ```{r}
@@ -62,6 +78,8 @@ tot.hat.str <- H*mu.hat #Estimated value
 #Standard error
 se.str <- H*sqrt(var(mu.h.str$mu.h*N.h$n)/n)
 ( summer.str.results <- c(tot.hat.str,se.str) )
+#95% CI
+( ci.summer.str <- c(tot.hat.str-1.96*se.str,tot.hat.str+1.96*se.str))
 ```
 
 We will now move on to the second parameter of interest, which is the proportion of Theft of Bicycle out of all crimes in 2022. We will use the same SRS and stratified sample as given above.
@@ -73,6 +91,8 @@ p.hat.SRS_bike <- nrow(bike_theft)/n
 #Standard error of the estimator, including FPC
 se.SRS_bike <- sqrt((1-n/N)*p.hat.SRS_bike*(1-p.hat.SRS_bike)/n)
 ( bike_theft.SRS.results <- c(p.hat.SRS_bike, se.SRS_bike) )
+#95% CI
+( ci.bike.SRS <- c(p.hat.SRS_bike-1.96*se.SRS_bike,p.hat.SRS_bike+1.96*se.SRS_bike))
 ```
 
 ```{r}
@@ -86,6 +106,8 @@ p.hat.str_bike <- sum(N.h$n/N*p.hat.h_bike$p.hat.h) #Estimated value
 se.h_bike <- sqrt((1 - n.h / N.h$n) * p.hat.h_bike$p.hat.h*(1-p.hat.h_bike$p.hat.h) / n.h)
 se.str_bike <- sqrt(sum((N.h$n / N)^2 * se.h_bike^2))
 ( bike_theft.str.results <- c(p.hat.str_bike,se.str_bike) )
+#95% CI
+( ci.bike.str <- c(p.hat.str_bike-1.96*se.str_bike, p.hat.str_bike+1.96*se.str_bike) ) 
 ```
 
 
