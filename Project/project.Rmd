@@ -16,7 +16,7 @@ dat[c('TYPE','HUNDRED_BLOCK','NEIGHBOURHOOD')] <- lapply(dat[c('TYPE','HUNDRED_B
 dat <- dat[dat$NEIGHBOURHOOD!="",]
 ( unique(dat$TYPE) )
 ( unique(dat$NEIGHBOURHOOD)) 
-H <- length(unique(dat$NEIGHBOURHOOD))
+#H <- length(unique(dat$NEIGHBOURHOOD))
 summary(dat$TYPE)
 ```
 Population and taking sample
@@ -28,10 +28,10 @@ library(sampling)
 #Stratified sample by neighborhood
 dat <- dat[order(dat$NEIGHBOURHOOD),]
 dat <- dat[-(1:5),] #Drop first 5 rows where the neighborhood name is blank space
-freq <- table(dat$NEIGHBOURHOOD)/nrow(dat)
-freq <- as.vector(freq[-1])
-n.h <- round(freq*n) #Each stratum sample size
-strt <- strata(dat, stratanames = 'NEIGHBOURHOOD', size=n.h, method = 'srswr')
+#freq <- table(dat$NEIGHBOURHOOD)/nrow(dat)
+#freq <- as.vector(freq[-1])
+#n.h <- round(freq*n) #Each stratum sample size
+#strt <- strata(dat, stratanames = 'NEIGHBOURHOOD', size=n.h, method = 'srswr')
 
 #Grouping of neighborhoods into larger areas
 D1 <- c('West End', 'Yaletown', 'Coal Harbour','Central Business District','Stanley Park')
@@ -42,10 +42,11 @@ dat$DISTRICT[dat$NEIGHBOURHOOD %in% D1] = 'D1'
 dat$DISTRICT[dat$NEIGHBOURHOOD %in% D2] = 'D2'
 dat$DISTRICT[dat$NEIGHBOURHOOD %in% D3] = 'D3'
 dat$DISTRICT[dat$NEIGHBOURHOOD %in% D4] = 'D4'
-#freq <- table(dat$DISTRICT)/nrow(dat)
-#freq <- as.vector(freq)
-#n.h <- round(freq*n)
-#strt <-  strata(dat, stratanames = 'DISTRICT', size=n.h, method = 'srswr')
+freq <- table(dat$DISTRICT)/nrow(dat)
+freq <- as.vector(freq)
+n.h <- round(freq*n)
+strt <-  strata(dat, stratanames = 'DISTRICT', size=n.h, method = 'srswr')
+H <- 4 #4 districts as strata
 sample.strt <- dat[strt$ID_unit,]
 ```
 
@@ -68,10 +69,10 @@ se.SRS <- N*sqrt(var(SRS$u)/n)
 Next, we will find the stratification estimator:
 ```{r}
 sample.strt$summer <- ifelse(sample.strt$MONTH %in% c(7,8),1,0) #Create dummy for if the month is in summer
-N.h <- dat %>% group_by(NEIGHBOURHOOD) %>% count() #population size for the strata
+N.h <- dat %>% group_by(DISTRICT) %>% count() #population size for the strata
 
 mu.h.str <- sample.strt %>%  #number of crimes in summer for each strata
-  group_by(NEIGHBOURHOOD) %>% 
+  group_by(DISTRICT) %>% 
   summarise(mu.h = mean(summer))
 mu.hat <- mean(mu.h.str$mu.h*N.h$n)
 tot.hat.str <- H*mu.hat #Estimated value
@@ -99,7 +100,7 @@ se.SRS_bike <- sqrt((1-n/N)*p.hat.SRS_bike*(1-p.hat.SRS_bike)/n)
 #Estimator from stratified sample
 sample.strt$bike_theft <- ifelse(sample.strt$TYPE=='Theft of Bicycle',1,0) #Create dummy for if the crime type is bike theft
 p.hat.h_bike <- sample.strt %>%  #proportion for each strata
-  group_by(NEIGHBOURHOOD) %>% 
+  group_by(DISTRICT) %>% 
   summarise(p.hat.h = mean(bike_theft))
 p.hat.str_bike <- sum(N.h$n/N*p.hat.h_bike$p.hat.h) #Estimated value
 #Standard error
@@ -109,6 +110,7 @@ se.str_bike <- sqrt(sum((N.h$n / N)^2 * se.h_bike^2))
 #95% CI
 ( ci.bike.str <- c(p.hat.str_bike-1.96*se.str_bike, p.hat.str_bike+1.96*se.str_bike) ) 
 ```
+
 
 
 
